@@ -85,4 +85,29 @@ public class HostsContentTest {
     public void parse_null_returnsEmptyList() {
         assertEquals(0, HostsContent.parse(null).size());
     }
+
+    @Test
+    public void parse_inlineCommentInEntry() {
+        List<HostsContent.HostsEntry> entries = HostsContent.parse("127.0.0.1 example.com # block ads");
+        assertEquals(1, entries.size());
+        assertEquals("127.0.0.1", entries.get(0).ip);
+        assertEquals("example.com", entries.get(0).domain);
+        assertFalse(entries.get(0).isComment);
+    }
+
+    @Test
+    public void parse_tabSeparatedEntry() {
+        List<HostsContent.HostsEntry> entries = HostsContent.parse("127.0.0.1\texample.com");
+        assertEquals(1, entries.size());
+        assertEquals("127.0.0.1", entries.get(0).ip);
+        assertEquals("example.com", entries.get(0).domain);
+    }
+
+    @Test
+    public void serialize_trailingNewline() {
+        String input = "127.0.0.1 example.com\n";
+        List<HostsContent.HostsEntry> entries = HostsContent.parse(input);
+        String result = HostsContent.serialize(entries);
+        assertEquals("127.0.0.1 example.com", result);
+    }
 }

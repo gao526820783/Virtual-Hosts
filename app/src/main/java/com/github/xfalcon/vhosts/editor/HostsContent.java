@@ -54,7 +54,14 @@ public class HostsContent {
                 String[] parts = trimmed.split("\\s+", 2);
                 if (parts.length == 2) {
                     String ip = parts[0].trim();
-                    String domain = parts[1].trim();
+                    String domainPart = parts[1].trim();
+                    // Strip inline comment
+                    int commentIdx = domainPart.indexOf('#');
+                    String domain = commentIdx >= 0 ? domainPart.substring(0, commentIdx).trim() : domainPart;
+                    if (domain.isEmpty()) {
+                        entries.add(HostsEntry.createComment(trimmed));
+                        continue;
+                    }
                     try {
                         Address.getByAddress(ip);
                         entries.add(HostsEntry.createRecord(ip, domain));
