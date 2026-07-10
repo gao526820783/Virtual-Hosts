@@ -60,5 +60,18 @@
 
     <string name="no_net_record">warning! net hosts file no dns record, please check</string>
     <string name="no_local_record">warning! local hosts file no dns record, please check</string>
+    <string name="edit_hosts">编辑 Hosts</string>
+    <string name="new_hosts">新建并编辑</string>
+    <string name="tab_text_mode">文本模式</string>
+    <string name="tab_record_mode">逐条模式</string>
+    <string name="add_record">+ 添加记录</string>
+    <string name="save">保存</string>
+    <string name="save_success">保存成功</string>
+    <string name="save_failed">保存失败</string>
+    <string name="ip_format_error">第 %d 行 IP 格式错误：%s</string>
+    <string name="text_format_hint">每行一条记录，格式：IP 域名。支持 # 注释</string>
+    <string name="record_empty">(空行)</string>
+    <string name="delete_record">删除</string>
+    <string name="file_changed_external">文件已被外部修改，是否覆盖？</string>
 
 </resources>
