@@ -28,6 +28,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.github.clans.fab.FloatingActionButton;
+import com.github.xfalcon.vhosts.editor.HostsEditorActivity;
 import com.github.xfalcon.vhosts.util.LogUtils;
 import com.github.xfalcon.vhosts.vservice.VhostsService;
 import com.google.firebase.analytics.FirebaseAnalytics;
@@ -67,6 +68,7 @@ public class VhostsActivity extends AppCompatActivity {
         final SwitchButton vpnButton = findViewById(R.id.button_start_vpn);
 
         final Button selectHosts = findViewById(R.id.button_select_hosts);
+        final Button editHosts = findViewById(R.id.button_edit_hosts);
         final FloatingActionButton fab_setting = findViewById(R.id.fab_setting);
         final FloatingActionButton fab_boot = findViewById(R.id.fab_boot);
         final FloatingActionButton fab_donation = findViewById(R.id.fab_donation);
@@ -126,6 +128,17 @@ public class VhostsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(getApplicationContext(), DonationActivity.class));
+            }
+        });
+
+        editHosts.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences settings = androidx.preference.PreferenceManager.getDefaultSharedPreferences(VhostsActivity.this);
+                Intent intent = new Intent(VhostsActivity.this, HostsEditorActivity.class);
+                intent.putExtra(HostsEditorActivity.EXTRA_IS_NET, settings.getBoolean(SettingsFragment.IS_NET, false));
+                intent.putExtra(HostsEditorActivity.EXTRA_HOSTS_URI, settings.getString(SettingsFragment.HOSTS_URI, ""));
+                startActivity(intent);
             }
         });
 
@@ -272,14 +285,17 @@ public class VhostsActivity extends AppCompatActivity {
     private void setButton(boolean enable) {
         final SwitchButton vpnButton = (SwitchButton) findViewById(R.id.button_start_vpn);
         final Button selectHosts = (Button) findViewById(R.id.button_select_hosts);
+        final Button editHosts = (Button) findViewById(R.id.button_edit_hosts);
         if (enable) {
             vpnButton.setChecked(false);
             selectHosts.setAlpha(1.0f);
             selectHosts.setClickable(true);
+            editHosts.setVisibility(View.GONE);
         } else {
             vpnButton.setChecked(true);
             selectHosts.setAlpha(.5f);
             selectHosts.setClickable(false);
+            editHosts.setVisibility(View.VISIBLE);
         }
     }
 
@@ -299,6 +315,34 @@ public class VhostsActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 setButton(true);
+            }
+        });
+
+        builder.setNeutralButton(getString(R.string.new_hosts), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                try {
+                    java.io.OutputStream os = openFileOutput("custom_hosts", Context.MODE_PRIVATE);
+                    os.write("# Custom Hosts File\n".getBytes());
+                    os.flush();
+                    os.close();
+
+                    SharedPreferences settings = androidx.preference.PreferenceManager.getDefaultSharedPreferences(VhostsActivity.this);
+                    SharedPreferences.Editor editor = settings.edit();
+                    String filePath = getFilesDir().getAbsolutePath() + "/custom_hosts";
+                    Uri fileUri = Uri.parse("file://" + filePath);
+                    editor.putString(SettingsFragment.HOSTS_URI, fileUri.toString());
+                    editor.putBoolean(SettingsFragment.IS_NET, false);
+                    editor.apply();
+
+                    Intent intent = new Intent(VhostsActivity.this, HostsEditorActivity.class);
+                    intent.putExtra(HostsEditorActivity.EXTRA_IS_NET, false);
+                    intent.putExtra(HostsEditorActivity.EXTRA_HOSTS_URI, fileUri.toString());
+                    startActivity(intent);
+                } catch (Exception e) {
+                    LogUtils.e(TAG, "Failed to create new hosts file", e);
+                    Toast.makeText(VhostsActivity.this, "创建文件失败", Toast.LENGTH_SHORT).show();
+                }
             }
         });
         builder.show();
