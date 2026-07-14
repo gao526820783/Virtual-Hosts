@@ -114,12 +114,12 @@
         </LinearLayout>
     </HorizontalScrollView>
 
-    <com.github.clans.fab.FloatingActionButton
+    <Button
         android:id="@+id/fab_quick_insert"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
-        android:src="@android:drawable/ic_input_add"
-        app:fab_label="@string/quick_insert_title" />
+        android:text="+"
+        android:textSize="22sp" />
 </LinearLayout>

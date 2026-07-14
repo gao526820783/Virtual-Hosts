@@ -16,7 +16,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import com.github.xfalcon.vhosts.util.LogUtils;
-import com.github.clans.fab.FloatingActionButton;
+import android.widget.Button;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -274,7 +274,7 @@ public class HostsEditorActivity extends AppCompatActivity {
     }
 
     private void setupQuickInsert() {
-        FloatingActionButton fab = findViewById(R.id.fab_quick_insert);
+        Button fab = findViewById(R.id.fab_quick_insert);
         fab.setOnClickListener(v -> showInsertMenu());
     }
 

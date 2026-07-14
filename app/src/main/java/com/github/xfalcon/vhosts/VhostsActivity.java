@@ -195,6 +195,10 @@ public class VhostsActivity extends AppCompatActivity {
     }
 
     private int checkHostUri() {
+        File userHostsFile = new File(getFilesDir(), "user_hosts.txt");
+        if (userHostsFile.exists()) {
+            return 3;
+        }
         SharedPreferences settings =  androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
         if (settings.getBoolean(SettingsFragment.IS_NET, false)) {
             try {
@@ -205,8 +209,10 @@ public class VhostsActivity extends AppCompatActivity {
                 return -2;
             }
         } else {
+            String uriStr = settings.getString(SettingsFragment.HOSTS_URI, null);
+            if (uriStr == null) return -1;
             try {
-                getContentResolver().openInputStream(Uri.parse(settings.getString(SettingsFragment.HOSTS_URI, null))).close();
+                getContentResolver().openInputStream(Uri.parse(uriStr)).close();
                 return 1;
             } catch (Exception e) {
                 LogUtils.e(TAG, "HOSTS FILE NOT FOUND", e);

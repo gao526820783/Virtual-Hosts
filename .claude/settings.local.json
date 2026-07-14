@@ -8,7 +8,16 @@
       "Bash(export ANDROID_HOME=\"D:/android sdk\")",
       "Bash(./gradlew assembleDebug)",
       "Bash(./gradlew assembleGithubDebug)",
-      "Bash(\"D:/android sdk/platform-tools/adb\" logcat -d -t 100 *:E)"
+      "Bash(\"D:/android sdk/platform-tools/adb\" logcat -d -t 100 *:E)",
+      "Bash(\"\\\\\"D:/android sdk/emulator/emulator\\\\\"\" -list-avds)",
+      "Bash(\"D:/Program Files/Microvirt/MEmu/adb.exe\" connect 127.0.0.1:21503)",
+      "Bash(\"D:/Program Files/Microvirt/MEmu/adb.exe\" connect 127.0.0.1:21513)",
+      "Bash(\"D:/Program Files/Microvirt/MEmu/adb.exe\" logcat -d -t 200 *:E)",
+      "Bash(\"D:/Program Files/Microvirt/MEmu/adb.exe\" install -r app/build/outputs/apk/github/debug/app-github-debug.apk)",
+      "Bash(\"D:/Program Files/Microvirt/MEmu/adb.exe\" logcat -c)",
+      "Bash(\"D:/Program Files/Microvirt/MEmu/adb.exe\" shell am start -n com.github.xfalcon.vithost/com.github.xfalcon.vhosts.HostsEditorActivity --ez new_file true)",
+      "Bash(\"D:/Program Files/Microvirt/MEmu/adb.exe\" logcat -d *:E)",
+      "Bash(\"D:/Program Files/Microvirt/MEmu/adb.exe\" logcat -d -t 50)"
     ]
   }
 }
