@@ -21,24 +21,36 @@ package com.github.xfalcon.vhosts;
 import android.content.*;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.github.clans.fab.FloatingActionButton;
-import com.github.xfalcon.vhosts.editor.HostsEditorActivity;
+import com.github.xfalcon.vhosts.util.FileUtils;
+import com.github.xfalcon.vhosts.util.HttpUtils;
 import com.github.xfalcon.vhosts.util.LogUtils;
+import com.github.xfalcon.vhosts.vservice.DnsChange;
 import com.github.xfalcon.vhosts.vservice.VhostsService;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.suke.widget.SwitchButton;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 
 public class VhostsActivity extends AppCompatActivity {
 
     private static final String TAG = VhostsActivity.class.getSimpleName();
+    private static final int EDIT_HOSTS_REQUEST_CODE = 0x06;
 
     private FirebaseAnalytics mFirebaseAnalytics;
 
@@ -68,7 +80,6 @@ public class VhostsActivity extends AppCompatActivity {
         final SwitchButton vpnButton = findViewById(R.id.button_start_vpn);
 
         final Button selectHosts = findViewById(R.id.button_select_hosts);
-        final Button editHosts = findViewById(R.id.button_edit_hosts);
         final FloatingActionButton fab_setting = findViewById(R.id.fab_setting);
         final FloatingActionButton fab_boot = findViewById(R.id.fab_boot);
         final FloatingActionButton fab_donation = findViewById(R.id.fab_donation);
@@ -114,31 +125,13 @@ public class VhostsActivity extends AppCompatActivity {
         selectHosts.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                selectFile();
-            }
-        });
-        selectHosts.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-                  startActivity(new Intent(getApplicationContext(), SettingsActivity.class));
-                return false;
+                showHostsMenu();
             }
         });
         fab_donation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(getApplicationContext(), DonationActivity.class));
-            }
-        });
-
-        editHosts.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                SharedPreferences settings = androidx.preference.PreferenceManager.getDefaultSharedPreferences(VhostsActivity.this);
-                Intent intent = new Intent(VhostsActivity.this, HostsEditorActivity.class);
-                intent.putExtra(HostsEditorActivity.EXTRA_IS_NET, settings.getBoolean(SettingsFragment.IS_NET, false));
-                intent.putExtra(HostsEditorActivity.EXTRA_HOSTS_URI, settings.getString(SettingsFragment.HOSTS_URI, ""));
-                startActivity(intent);
             }
         });
 
@@ -268,6 +261,10 @@ public class VhostsActivity extends AppCompatActivity {
             setButton(false);
         } else if (requestCode == SettingsFragment.SELECT_FILE_CODE && resultCode == RESULT_OK) {
             setUriByPREFS(data);
+        } else if (requestCode == EDIT_HOSTS_REQUEST_CODE && resultCode == RESULT_OK) {
+            if (VhostsService.isRunning()) {
+                refreshService();
+            }
         }
     }
 
@@ -285,17 +282,146 @@ public class VhostsActivity extends AppCompatActivity {
     private void setButton(boolean enable) {
         final SwitchButton vpnButton = (SwitchButton) findViewById(R.id.button_start_vpn);
         final Button selectHosts = (Button) findViewById(R.id.button_select_hosts);
-        final Button editHosts = (Button) findViewById(R.id.button_edit_hosts);
         if (enable) {
             vpnButton.setChecked(false);
             selectHosts.setAlpha(1.0f);
             selectHosts.setClickable(true);
-            editHosts.setVisibility(View.GONE);
         } else {
             vpnButton.setChecked(true);
             selectHosts.setAlpha(.5f);
             selectHosts.setClickable(false);
-            editHosts.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void showHostsMenu() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View sheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_hosts_menu, null);
+        builder.setView(sheetView);
+
+        LinearLayout editItem = sheetView.findViewById(R.id.menu_edit);
+        LinearLayout newItem = sheetView.findViewById(R.id.menu_new);
+        LinearLayout importItem = sheetView.findViewById(R.id.menu_import);
+        LinearLayout downloadItem = sheetView.findViewById(R.id.menu_download);
+        TextView statusText = sheetView.findViewById(R.id.menu_status);
+
+        final AlertDialog dialog = builder.create();
+
+        int recordCount = updateHostsStatus(statusText);
+
+        if (recordCount > 0) {
+            editItem.setAlpha(1.0f);
+            editItem.setClickable(true);
+        } else {
+            editItem.setAlpha(0.4f);
+            editItem.setClickable(false);
+        }
+
+        editItem.setOnClickListener(v -> {
+            dialog.dismiss();
+            Intent intent = new Intent(VhostsActivity.this, HostsEditorActivity.class);
+            startActivityForResult(intent, EDIT_HOSTS_REQUEST_CODE);
+        });
+
+        newItem.setOnClickListener(v -> {
+            dialog.dismiss();
+            Intent intent = new Intent(VhostsActivity.this, HostsEditorActivity.class);
+            intent.putExtra("new_file", true);
+            startActivityForResult(intent, EDIT_HOSTS_REQUEST_CODE);
+        });
+
+        importItem.setOnClickListener(v -> {
+            dialog.dismiss();
+            selectFile();
+        });
+
+        downloadItem.setOnClickListener(v -> {
+            dialog.dismiss();
+            showDownloadDialog();
+        });
+
+        dialog.show();
+    }
+
+    private int updateHostsStatus(TextView statusText) {
+        File file = new File(getFilesDir(), "user_hosts.txt");
+        if (file.exists()) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(new FileInputStream(file)))) {
+                int count = 0;
+                while (reader.readLine() != null) count++;
+                statusText.setText(getString(R.string.hosts_source_info,
+                    getString(R.string.hosts_source_internal), count));
+                return count;
+            } catch (Exception e) {
+                statusText.setText(R.string.no_hosts_loaded);
+                return 0;
+            }
+        } else {
+            int oldCount = checkHostUri();
+            if (oldCount > 0) {
+                statusText.setText(getString(R.string.hosts_source_info,
+                    oldCount == 2 ? getString(R.string.hosts_source_net) : getString(R.string.hosts_source_local), oldCount));
+                return oldCount;
+            }
+            statusText.setText(R.string.no_hosts_loaded);
+            return 0;
+        }
+    }
+
+    private void showDownloadDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View inputView = getLayoutInflater().inflate(R.layout.dialog_url_input, null);
+        EditText urlInput = inputView.findViewById(R.id.url_input);
+        urlInput.setHint(R.string.download_url_hint);
+        builder.setView(inputView);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String url = urlInput.getText().toString().trim();
+                if (!url.isEmpty()) {
+                    downloadHosts(url);
+                }
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, null);
+        builder.show();
+    }
+
+    private void downloadHosts(String url) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Looper.prepare();
+                    String result = HttpUtils.get(url);
+                    FileUtils.writeFile(
+                        openFileOutput("user_hosts.txt", Context.MODE_PRIVATE), result);
+                    int count = DnsChange.handle_hosts(
+                        openFileInput("user_hosts.txt"));
+                    Toast.makeText(VhostsActivity.this,
+                        String.format(getString(R.string.download_success), count),
+                        Toast.LENGTH_SHORT).show();
+                    refreshService();
+                    Looper.loop();
+                } catch (Exception e) {
+                    Looper.prepare();
+                    Toast.makeText(VhostsActivity.this,
+                        R.string.download_failed, Toast.LENGTH_SHORT).show();
+                    Looper.loop();
+                }
+            }
+        }).start();
+    }
+
+    private void refreshService() {
+        if (VhostsService.isRunning()) {
+            shutdownVPN();
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    startVPN();
+                }
+            }, 500);
         }
     }
 
@@ -315,34 +441,6 @@ public class VhostsActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 setButton(true);
-            }
-        });
-
-        builder.setNeutralButton(getString(R.string.new_hosts), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                try {
-                    java.io.OutputStream os = openFileOutput("custom_hosts", Context.MODE_PRIVATE);
-                    os.write("# Custom Hosts File\n".getBytes());
-                    os.flush();
-                    os.close();
-
-                    SharedPreferences settings = androidx.preference.PreferenceManager.getDefaultSharedPreferences(VhostsActivity.this);
-                    SharedPreferences.Editor editor = settings.edit();
-                    String filePath = getFilesDir().getAbsolutePath() + "/custom_hosts";
-                    Uri fileUri = Uri.parse("file://" + filePath);
-                    editor.putString(SettingsFragment.HOSTS_URI, fileUri.toString());
-                    editor.putBoolean(SettingsFragment.IS_NET, false);
-                    editor.apply();
-
-                    Intent intent = new Intent(VhostsActivity.this, HostsEditorActivity.class);
-                    intent.putExtra(HostsEditorActivity.EXTRA_IS_NET, false);
-                    intent.putExtra(HostsEditorActivity.EXTRA_HOSTS_URI, fileUri.toString());
-                    startActivity(intent);
-                } catch (Exception e) {
-                    LogUtils.e(TAG, "Failed to create new hosts file", e);
-                    Toast.makeText(VhostsActivity.this, "创建文件失败", Toast.LENGTH_SHORT).show();
-                }
             }
         });
         builder.show();

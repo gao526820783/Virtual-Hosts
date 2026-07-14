@@ -112,17 +112,17 @@
                   android:exported="false">
         </activity>
 
-        <activity android:name=".SettingsActivity"
-                  android:label="Settings"
+        <activity android:name=".HostsEditorActivity"
+                  android:label="Hosts Editor"
                   android:parentActivityName=".VhostsActivity"
                   android:exported="false">
             <meta-data
-                    android:name="android.support.PARENT_ACTIVITY"
-                    android:value=".VhostsActivity"/>
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".VhostsActivity"/>
         </activity>
 
-        <activity android:name=".editor.HostsEditorActivity"
-                  android:label="编辑 Hosts"
+        <activity android:name=".SettingsActivity"
+                  android:label="Settings"
                   android:parentActivityName=".VhostsActivity"
                   android:exported="false">
             <meta-data

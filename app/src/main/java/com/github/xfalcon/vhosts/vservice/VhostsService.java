@@ -138,30 +138,26 @@ public class VhostsService extends VpnService {
         String uri_path = settings.getString(SettingsFragment.HOSTS_URI, null);
         try {
             final InputStream inputStream;
-            if (is_net)
+            File userHostsFile = new File(getFilesDir(), "user_hosts.txt");
+            if (userHostsFile.exists()) {
+                inputStream = new FileInputStream(userHostsFile);
+            } else if (is_net) {
                 inputStream = openFileInput(SettingsFragment.NET_HOST_FILE);
-            else
+            } else {
                 inputStream = getContentResolver().openInputStream(Uri.parse(uri_path));
+            }
             new Thread() {
                 public void run() {
                     if (DnsChange.handle_hosts(inputStream) == 0) {
                         Looper.prepare();
-                        if(is_net){
-                            Toast.makeText(getApplicationContext(), R.string.no_net_record, Toast.LENGTH_LONG).show();
-                        }else{
-                            Toast.makeText(getApplicationContext(), R.string.no_local_record, Toast.LENGTH_LONG).show();
-                        }
+                        Toast.makeText(getApplicationContext(), R.string.no_local_record, Toast.LENGTH_LONG).show();
                         Looper.loop();
                     }
                 }
             }.start();
 
         } catch (Exception e) {
-            if(is_net){
-                Toast.makeText(getApplicationContext(), R.string.no_net_record, Toast.LENGTH_LONG).show();
-            }else{
-                Toast.makeText(getApplicationContext(), R.string.no_local_record, Toast.LENGTH_LONG).show();
-            }
+            Toast.makeText(getApplicationContext(), R.string.no_local_record, Toast.LENGTH_LONG).show();
             LogUtils.e(TAG, "error setup host file service", e);
         }
     }

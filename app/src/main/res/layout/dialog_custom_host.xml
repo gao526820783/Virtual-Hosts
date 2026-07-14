@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/custom_ip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/quick_insert_custom_ip"
+        android:singleLine="true"
+        android:inputType="textNoSuggestions" />
+
+    <EditText
+        android:id="@+id/custom_domain"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/quick_insert_custom_domain"
+        android:singleLine="true"
+        android:inputType="textUri"
+        android:layout_marginTop="8dp" />
+</LinearLayout>

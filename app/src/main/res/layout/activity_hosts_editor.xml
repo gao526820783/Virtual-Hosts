@@ -1,40 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <LinearLayout
-        android:id="@+id/tab_bar"
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/editor_toolbar"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:title="@string/editor_title" />
+
+    <LinearLayout
+        android:id="@+id/search_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="@color/primary">
+        android:padding="4dp"
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        android:background="@android:color/darker_gray">
+
+        <EditText
+            android:id="@+id/search_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/search_hint"
+            android:singleLine="true"
+            android:padding="8dp"
+            android:textColor="@android:color/white"
+            android:textColorHint="@android:color/darker_gray" />
 
         <Button
-            android:id="@+id/tab_text"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="@string/tab_text_mode"
-            android:textColor="@color/icons"
-            android:background="?attr/selectableItemBackground"
-            style="?android:attr/borderlessButtonStyle" />
+            android:id="@+id/search_prev_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/search_prev"
+            style="?android:attr/buttonBarButtonStyle" />
 
         <Button
-            android:id="@+id/tab_record"
+            android:id="@+id/search_next_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/search_next"
+            style="?android:attr/buttonBarButtonStyle" />
+
+        <EditText
+            android:id="@+id/replace_input"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/tab_record_mode"
-            android:textColor="@color/icons"
-            android:background="?attr/selectableItemBackground"
-            style="?android:attr/borderlessButtonStyle" />
+            android:hint="@string/search_replace_hint"
+            android:singleLine="true"
+            android:padding="8dp"
+            android:textColor="@android:color/white"
+            android:textColorHint="@android:color/darker_gray" />
+
+        <Button
+            android:id="@+id/search_replace_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/search_replace"
+            style="?android:attr/buttonBarButtonStyle" />
+
+        <Button
+            android:id="@+id/search_replace_all_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/search_replace_all"
+            style="?android:attr/buttonBarButtonStyle" />
+
+        <Button
+            android:id="@+id/search_close_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="X"
+            style="?android:attr/buttonBarButtonStyle" />
     </LinearLayout>
 
-    <FrameLayout
-        android:id="@+id/fragment_container"
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <com.github.xfalcon.vhosts.LineNumberView
+                android:id="@+id/line_number_view"
+                android:layout_width="48dp"
+                android:layout_height="match_parent"
+                android:background="#F0F0F0" />
+
+            <EditText
+                android:id="@+id/hosts_edit_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:minWidth="600dp"
+                android:gravity="top|start"
+                android:textSize="14sp"
+                android:typeface="monospace"
+                android:padding="8dp"
+                android:scrollbars="vertical"
+                android:background="@android:color/transparent"
+                android:inputType="textMultiLine|textNoSuggestions" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/fab_quick_insert"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:src="@android:drawable/ic_input_add"
+        app:fab_label="@string/quick_insert_title" />
 </LinearLayout>

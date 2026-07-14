@@ -5,7 +5,7 @@ plugins {
 android {
     compileSdk 36
     defaultConfig {
-        applicationId "com.github.xfalcon.vhosts"
+        applicationId "com.github.xfalcon.vithost"
         minSdkVersion 19
         targetSdkVersion 36
         versionCode 43
